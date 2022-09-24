@@ -85,15 +85,12 @@ def extract_cut_specs(timestamps_file) -> typing.Iterable[CutSpec]:
     return [_ for _ in specs if _]
 
 
-def _parse_line(line, idx):
-    line = line.strip()
-    if line.startswith('#'):
-        return  # Ignore lines starting with #
-    args = line.split()
+def _parse_line(line: str, idx: int) -> CutSpec:
+    args = line.strip().split()
     if len(args) != 3:
         raise ValueError(
-            f'Incorrect number of arguments. Note that spaces in filenames are'
-            f' not allowed! Line that cause the error: {line}')
+            f'Incorrect number of arguments found. Note that spaces in '
+            f'filenames are not allowed! Line that caused the error: "{line}"')
     start_time = args[0]
     end_time = args[1]
     file_name = f'{idx}_{args[2]}'

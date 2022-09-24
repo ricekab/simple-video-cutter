@@ -1,10 +1,11 @@
 import logging
+import os
 from datetime import datetime
 
 import click
 
 from simplevideocutter import util
-from simplevideocutter.cut import run_ffmpeg_cut_command
+from simplevideocutter.cut import run_ffmpeg_cut_command, extract_cut_specs
 
 time_spec_formats = ['%H:%M:%S', '%H-%M-%S']
 
@@ -37,7 +38,9 @@ def entry():
     pass
 
 
-@entry.command()
+@entry.command(
+    help='''Cut a single video from source.'''
+)
 @click.option('--source-vod', '-source', '-src',
               type=click.Path(exists=True, file_okay=True, dir_okay=False),
               required=True,
@@ -92,19 +95,61 @@ def single(source_vod, destination_file, start_time, start_offset, end_time,
                            )
 
 
-@entry.command()
+@entry.command(
+    help='''Cut into multiple videos using a timestamp specification file.
+    
+    Each line in the file corresponds to a single cut, and must be formatted 
+    as:
+    
+    start-time end-time destination-filename
+    HH:MM:SS HH:MM:SS myexamplefile.mp4
+    
+    For example:
+    
+    01:12:34  01:15:44  soghent2_wf_Dia(Peach)_Nibodax(Bayonetta).mp4
+    ''')
+@click.option('--source-vod', '-source', '-src',
+              type=click.Path(exists=True, file_okay=True, dir_okay=False),
+              required=True,
+              help='The source VOD to be cut.')
+@click.option('--destination-directory', '-destination', '-dst',
+              type=click.Path(exists=False, file_okay=False, dir_okay=True),
+              # TODO: Default value? Relative to working dir?
+              required=True,
+              help='The destination output directory for all the cut VODs.')
+@click.option('--timestamps-file', '-timestamps', '-ts',
+              type=click.Path(exists=True, file_okay=True, dir_okay=False),
+              required=True,
+              help='The timestamps file.'
+              )
+@click.option('--allow-overwrite', '-force', '-f',
+              is_flag=True,
+              flag_value=True,
+              help='If this flag is given, destination file(s) can be '
+                   'overwritten.')
 @add_logging_options
-def multi(log_level):
-    click.echo('TODO: Implement multi cut using timestamps file '
-               '(or multi options?)')
+def multi(source_vod, destination_directory, timestamps_file, allow_overwrite,
+          log_level):
+    log_level = log_level or logging.WARNING
+    util.configure_logging(log_level=log_level)
+    os.makedirs(destination_directory, exist_ok=True)
+    cut_specs = extract_cut_specs(timestamps_file)
+    for cut_spec in cut_specs:
+        run_ffmpeg_cut_command(input_file=source_vod,
+                               output_file=cut_spec.file_name,
+                               start_offset_in_s=cut_spec.start_offset,
+                               duration_in_s=cut_spec.duration,
+                               force_write=allow_overwrite, )
 
 
 @entry.command(
-    help='NOT IMPLEMENTED. '
-         'Start Graphical User Interface (GUI) to define video cuts. This '
-         'requires PySide2 to be installed. See the installation guide for '
-         'details on this.'
+    help='''NOT IMPLEMENTED.
+    
+    Start Graphical User Interface (GUI) to define video cuts. This
+    requires PySide2 to be installed. See the installation guide for 
+    details on this.
+    '''
 )
 @add_logging_options
 def gui(log_level):
-    click.echo('TODO: Start GUI')
+    click.echo('Not implemented yet.')
