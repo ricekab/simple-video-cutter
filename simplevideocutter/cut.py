@@ -1,20 +1,22 @@
 """
 Video cutting / processing module.
 """
-import os
-import subprocess
 import logging
-
+import subprocess
 import typing
 from collections import namedtuple
 from datetime import datetime
 
+from simplevideocutter import util
+
 _l = logging.getLogger(__name__)
+
 
 def generate_cut_command(input_file: str,
                          output_file: str,
                          start_offset_in_s: int,
                          duration_in_s: int,
+                         force_write: bool = False,
                          ) -> list:
     """
     TODO doc
@@ -32,21 +34,26 @@ def generate_cut_command(input_file: str,
     :param output_file:
     :param start_offset_in_s:
     :param duration_in_s:
+    :param force_write:
     :return: List of arguments for the ffmpeg subprocess.
     """
-    return [f'ffmpeg',
+    args = [f'ffmpeg',
             f'-ss {start_offset_in_s}',
             f'-i {input_file}',
             f'-t {duration_in_s}',
             f'-codec copy',
             f'{output_file}',
             ]
+    if force_write:
+        args.append('-y')
+    return args
 
 
 def run_ffmpeg_cut_command(input_file: str,
                            output_file: str,
                            start_offset_in_s: int,
                            duration_in_s: int,
+                           force_write: bool = False,
                            ):
     """
     TODO doc
@@ -54,9 +61,12 @@ def run_ffmpeg_cut_command(input_file: str,
     cmd_args = generate_cut_command(input_file=input_file,
                                     output_file=output_file,
                                     start_offset_in_s=start_offset_in_s,
-                                    duration_in_s=duration_in_s)
+                                    duration_in_s=duration_in_s,
+                                    force_write=force_write)
+    _l.info('FFMPEG command args:')
+    _l.info(cmd_args)
     try:
-        proc = subprocess.run(cmd_args)
+        proc = subprocess.run(' '.join(cmd_args))
         return proc.returncode
     except subprocess.CalledProcessError as exc:
         # TODO: Custom exception here?
@@ -69,7 +79,8 @@ CutSpec = namedtuple('CutSpec', ('start_offset', 'duration', 'file_name',))
 def extract_cut_specs(timestamps_file) -> typing.Iterable[CutSpec]:
     with open(timestamps_file, 'rt') as _f:
         data = _f.readlines()
-    data = [_line for _line in data if not _line.startswith('#')]  # filter out comments
+    # filter out comments
+    data = [_line for _line in data if not _line.startswith('#')]
     specs = (_parse_line(line, idx) for idx, line in enumerate(data, start=1))
     return [_ for _ in specs if _]
 
@@ -80,18 +91,20 @@ def _parse_line(line, idx):
         return  # Ignore lines starting with #
     args = line.split()
     if len(args) != 3:
-        raise ValueError(f'Incorrect number of arguments. Note that spaces in filenames are '
-                         f'not allowed! Line that cause the error: {line}')
+        raise ValueError(
+            f'Incorrect number of arguments. Note that spaces in filenames are'
+            f' not allowed! Line that cause the error: {line}')
     start_time = args[0]
     end_time = args[1]
     file_name = f'{idx}_{args[2]}'
     start_time = datetime.strptime(start_time, '%H:%M:%S')
-    start_offset = start_time.hour * 60 * 60 + start_time.minute * 60 + start_time.second
+    start_offset = util.datetime_to_seconds(start_time)
     end_time = datetime.strptime(end_time, '%H:%M:%S')
-    end_offset = end_time.hour * 60 * 60 + end_time.minute * 60 + end_time.second
+    end_offset = util.datetime_to_seconds(end_time)
     duration = end_offset - start_offset
-    return CutSpec(start_offset=start_offset, duration=duration, file_name=file_name)
-
+    return CutSpec(start_offset=start_offset,
+                   duration=duration,
+                   file_name=file_name)
 
 # def cut_vod(source, timestamps_file, destination_dir):
 #     source = os.path.abspath(source)

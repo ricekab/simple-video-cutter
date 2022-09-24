@@ -22,5 +22,6 @@ setup(
     entry_points='''
         [console_scripts]
         simplevideocut=simplevideocutter.cli:entry
+        svc=simplevideocutter.cli:entry
     '''
 )
