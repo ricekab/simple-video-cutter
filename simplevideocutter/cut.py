@@ -42,7 +42,7 @@ def generate_cut_command(input_file: str,
             f'-i {input_file}',
             f'-t {duration_in_s}',
             f'-codec copy',
-            f'{output_file}',
+            f'"{output_file}"',
             ]
     if force_write:
         args.append('-y')
@@ -66,7 +66,7 @@ def run_ffmpeg_cut_command(input_file: str,
     _l.info('FFMPEG command args:')
     _l.info(cmd_args)
     try:
-        proc = subprocess.run(' '.join(cmd_args))
+        proc = subprocess.run(' '.join(cmd_args), shell=True)
         return proc.returncode
     except subprocess.CalledProcessError as exc:
         # TODO: Custom exception here?

@@ -49,7 +49,8 @@ In this mode, the following information for each cut is read from a separate fil
 
 The file format requires that each line corresponds to a single cut, and must be formatted as:
 
-    start-time end-time destination-filename HH:MM:SS HH:MM:SS myexamplefile.mp4
+    start-time end-time destination-filename 
+    HH:MM:SS HH:MM:SS myexamplefile.mp4
 
 For example:
 
