@@ -135,8 +135,9 @@ def multi(source_vod, destination_directory, timestamps_file, allow_overwrite,
     os.makedirs(destination_directory, exist_ok=True)
     cut_specs = extract_cut_specs(timestamps_file)
     for cut_spec in cut_specs:
+        output_file = os.path.normpath(os.path.join(destination_directory, cut_spec.file_name))
         run_ffmpeg_cut_command(input_file=source_vod,
-                               output_file=cut_spec.file_name,
+                               output_file=output_file,
                                start_offset_in_s=cut_spec.start_offset,
                                duration_in_s=cut_spec.duration,
                                force_write=allow_overwrite, )
