@@ -77,6 +77,19 @@ See the *Installation* section above.
 
 Requests and pull requests are welcome.
 
+## Uploading a new release
+
+1. Clean out dist/*
+
+2. Build new distributions
+
+    python setup.py sdist
+    python setup.py bdist_wheel
+
+3. Upload to PyPI
+
+    twine upload dist/*
+
 ## License
 
 This package (and _only_ this package) is [MIT licensed](https://choosealicense.com/licenses/mit/).
